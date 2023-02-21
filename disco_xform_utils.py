@@ -59,7 +59,7 @@ def transform_image_3d(img_filepath, midas_model, midas_transform, device, rot_m
     # MiDaS depth estimation implementation
     print("Running MiDaS depth estimation implementation...")
     sample = torch.from_numpy(img_midas_input).float().to(device).unsqueeze(0)
-    if midas_optimize==True and device == torch.device("cuda"):
+    if midas_optimize and device == torch.device("cuda"):
         sample = sample.to(memory_format=torch.channels_last)  
         sample = sample.half()
     prediction_torch = midas_model.forward(sample)

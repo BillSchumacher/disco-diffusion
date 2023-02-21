@@ -7,6 +7,7 @@
 <a href="https://colab.research.google.com/github/alembics/disco-diffusion/blob/main/Disco_Diffusion.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 """
 
+
 # %%
 # !! {"metadata":{
 # !!   "id": "TitleTop"
@@ -194,7 +195,7 @@ limitations under the License.
 #@title <- View Changelog
 skip_for_run_all = True #@param {type: 'boolean'}
 
-if skip_for_run_all == False:
+if not skip_for_run_all:
   print(
       '''
   v1 Update: Oct 29th 2021 - Somnai
@@ -474,13 +475,13 @@ except:
     print("Google Colab not detected.")
 
 if is_colab:
-    if google_drive is True:
-        drive.mount('/content/drive')
-        root_path = '/content/drive/MyDrive/AI/Disco_Diffusion'
-    else:
-        root_path = '/content'
+  if google_drive:
+    drive.mount('/content/drive')
+    root_path = '/content/drive/MyDrive/AI/Disco_Diffusion'
+  else:
+    root_path = '/content'
 else:
-    root_path = os.getcwd()
+  root_path = os.getcwd()
 
 import os
 def createPath(filepath):
@@ -535,12 +536,12 @@ PROJECT_DIR = os.path.abspath(os.getcwd())
 USE_ADABINS = True
 
 if is_colab:
-    if not google_drive:
-        root_path = f'/content'
-        model_path = '/content/models' 
+  if not google_drive:
+    root_path = '/content'
+    model_path = '/content/models'
 else:
-    root_path = os.getcwd()
-    model_path = f'{root_path}/models'
+  root_path = os.getcwd()
+  model_path = f'{root_path}/models'
 
 multipip_res = subprocess.run(['pip', 'install', 'lpips', 'datetime', 'timm', 'ftfy', 'einops', 'pytorch-lightning', 'omegaconf'], stdout=subprocess.PIPE).stdout.decode('utf-8')
 print(multipip_res)
@@ -669,10 +670,9 @@ DEVICE = torch.device('cuda:0' if (torch.cuda.is_available() and not useCPU) els
 print('Using device:', DEVICE)
 device = DEVICE # At least one of the modules expects this name..
 
-if not useCPU:
-    if torch.cuda.get_device_capability(DEVICE) == (8,0): ## A100 fix thanks to Emad
-        print('Disabling CUDNN for A100 gpu', file=sys.stderr)
-        torch.backends.cudnn.enabled = False
+if not useCPU and torch.cuda.get_device_capability(DEVICE) == (8, 0):
+  print('Disabling CUDNN for A100 gpu', file=sys.stderr)
+  torch.backends.cudnn.enabled = False
 
 # %%
 # !! {"metadata":{
@@ -698,88 +698,87 @@ default_models = {
 
 
 def init_midas_depth_model(midas_model_type="dpt_large", optimize=True):
-    midas_model = None
-    net_w = None
-    net_h = None
-    resize_mode = None
-    normalization = None
+  midas_model = None
+  net_w = None
+  net_h = None
+  resize_mode = None
+  normalization = None
 
-    print(f"Initializing MiDaS '{midas_model_type}' depth model...")
-    # load network
-    midas_model_path = default_models[midas_model_type]
+  print(f"Initializing MiDaS '{midas_model_type}' depth model...")
+  # load network
+  midas_model_path = default_models[midas_model_type]
 
-    if midas_model_type == "dpt_large": # DPT-Large
-        midas_model = DPTDepthModel(
-            path=midas_model_path,
-            backbone="vitl16_384",
-            non_negative=True,
-        )
-        net_w, net_h = 384, 384
-        resize_mode = "minimal"
-        normalization = NormalizeImage(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-    elif midas_model_type == "dpt_hybrid": #DPT-Hybrid
-        midas_model = DPTDepthModel(
-            path=midas_model_path,
-            backbone="vitb_rn50_384",
-            non_negative=True,
-        )
-        net_w, net_h = 384, 384
-        resize_mode="minimal"
-        normalization = NormalizeImage(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-    elif midas_model_type == "dpt_hybrid_nyu": #DPT-Hybrid-NYU
-        midas_model = DPTDepthModel(
-            path=midas_model_path,
-            backbone="vitb_rn50_384",
-            non_negative=True,
-        )
-        net_w, net_h = 384, 384
-        resize_mode="minimal"
-        normalization = NormalizeImage(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-    elif midas_model_type == "midas_v21":
-        midas_model = MidasNet(midas_model_path, non_negative=True)
-        net_w, net_h = 384, 384
-        resize_mode="upper_bound"
-        normalization = NormalizeImage(
-            mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-        )
-    elif midas_model_type == "midas_v21_small":
-        midas_model = MidasNet_small(midas_model_path, features=64, backbone="efficientnet_lite3", exportable=True, non_negative=True, blocks={'expand': True})
-        net_w, net_h = 256, 256
-        resize_mode="upper_bound"
-        normalization = NormalizeImage(
-            mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-        )
-    else:
-        print(f"midas_model_type '{midas_model_type}' not implemented")
-        assert False
+  if midas_model_type == "dpt_large": # DPT-Large
+      midas_model = DPTDepthModel(
+          path=midas_model_path,
+          backbone="vitl16_384",
+          non_negative=True,
+      )
+      net_w, net_h = 384, 384
+      resize_mode = "minimal"
+      normalization = NormalizeImage(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+  elif midas_model_type == "dpt_hybrid": #DPT-Hybrid
+      midas_model = DPTDepthModel(
+          path=midas_model_path,
+          backbone="vitb_rn50_384",
+          non_negative=True,
+      )
+      net_w, net_h = 384, 384
+      resize_mode="minimal"
+      normalization = NormalizeImage(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+  elif midas_model_type == "dpt_hybrid_nyu": #DPT-Hybrid-NYU
+      midas_model = DPTDepthModel(
+          path=midas_model_path,
+          backbone="vitb_rn50_384",
+          non_negative=True,
+      )
+      net_w, net_h = 384, 384
+      resize_mode="minimal"
+      normalization = NormalizeImage(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+  elif midas_model_type == "midas_v21":
+      midas_model = MidasNet(midas_model_path, non_negative=True)
+      net_w, net_h = 384, 384
+      resize_mode="upper_bound"
+      normalization = NormalizeImage(
+          mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+      )
+  elif midas_model_type == "midas_v21_small":
+      midas_model = MidasNet_small(midas_model_path, features=64, backbone="efficientnet_lite3", exportable=True, non_negative=True, blocks={'expand': True})
+      net_w, net_h = 256, 256
+      resize_mode="upper_bound"
+      normalization = NormalizeImage(
+          mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+      )
+  else:
+      print(f"midas_model_type '{midas_model_type}' not implemented")
+      assert False
 
-    midas_transform = T.Compose(
-        [
-            Resize(
-                net_w,
-                net_h,
-                resize_target=None,
-                keep_aspect_ratio=True,
-                ensure_multiple_of=32,
-                resize_method=resize_mode,
-                image_interpolation_method=cv2.INTER_CUBIC,
-            ),
-            normalization,
-            PrepareForNet(),
-        ]
-    )
+  midas_transform = T.Compose(
+      [
+          Resize(
+              net_w,
+              net_h,
+              resize_target=None,
+              keep_aspect_ratio=True,
+              ensure_multiple_of=32,
+              resize_method=resize_mode,
+              image_interpolation_method=cv2.INTER_CUBIC,
+          ),
+          normalization,
+          PrepareForNet(),
+      ]
+  )
 
-    midas_model.eval()
-    
-    if optimize==True:
-        if DEVICE == torch.device("cuda"):
-            midas_model = midas_model.to(memory_format=torch.channels_last)  
-            midas_model = midas_model.half()
+  midas_model.eval()
 
-    midas_model.to(DEVICE)
+  if optimize == True and DEVICE == torch.device("cuda"):
+    midas_model = midas_model.to(memory_format=torch.channels_last)
+    midas_model = midas_model.half()
 
-    print(f"MiDaS '{midas_model_type}' depth model initialized.")
-    return midas_model, midas_transform, net_w, net_h, resize_mode, normalization
+  midas_model.to(DEVICE)
+
+  print(f"MiDaS '{midas_model_type}' depth model initialized.")
+  return midas_model, midas_transform, net_w, net_h, resize_mode, normalization
 
 # %%
 # !! {"metadata":{
@@ -934,27 +933,26 @@ class MakeCutouts(nn.Module):
         ])
 
     def forward(self, input):
-        input = T.Pad(input.shape[2]//4, fill=0)(input)
-        sideY, sideX = input.shape[2:4]
-        max_size = min(sideX, sideY)
+      input = T.Pad(input.shape[2]//4, fill=0)(input)
+      sideY, sideX = input.shape[2:4]
+      max_size = min(sideX, sideY)
 
-        cutouts = []
-        for ch in range(self.cutn):
-            if ch > self.cutn - self.cutn//4:
-                cutout = input.clone()
-            else:
-                size = int(max_size * torch.zeros(1,).normal_(mean=.8, std=.3).clip(float(self.cut_size/max_size), 1.))
-                offsetx = torch.randint(0, abs(sideX - size + 1), ())
-                offsety = torch.randint(0, abs(sideY - size + 1), ())
-                cutout = input[:, :, offsety:offsety + size, offsetx:offsetx + size]
+      cutouts = []
+      for ch in range(self.cutn):
+          if ch > self.cutn - self.cutn//4:
+              cutout = input.clone()
+          else:
+              size = int(max_size * torch.zeros(1,).normal_(mean=.8, std=.3).clip(float(self.cut_size/max_size), 1.))
+              offsetx = torch.randint(0, abs(sideX - size + 1), ())
+              offsety = torch.randint(0, abs(sideY - size + 1), ())
+              cutout = input[:, :, offsety:offsety + size, offsetx:offsetx + size]
 
-            if not self.skip_augs:
-                cutout = self.augs(cutout)
-            cutouts.append(resample(cutout, (self.cut_size, self.cut_size)))
-            del cutout
+          if not self.skip_augs:
+              cutout = self.augs(cutout)
+          cutouts.append(resample(cutout, (self.cut_size, self.cut_size)))
+          del cutout
 
-        cutouts = torch.cat(cutouts, dim=0)
-        return cutouts
+      return torch.cat(cutouts, dim=0)
 
 cutout_debug = False
 padargs = {}
@@ -964,98 +962,96 @@ class MakeCutoutsDango(nn.Module):
                  Overview=4, 
                  InnerCrop = 0, IC_Size_Pow=0.5, IC_Grey_P = 0.2
                  ):
-        super().__init__()
-        self.cut_size = cut_size
-        self.Overview = Overview
-        self.InnerCrop = InnerCrop
-        self.IC_Size_Pow = IC_Size_Pow
-        self.IC_Grey_P = IC_Grey_P
-        if args.animation_mode == 'None':
-          self.augs = T.Compose([
-              T.RandomHorizontalFlip(p=0.5),
-              T.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
-              T.RandomAffine(degrees=10, translate=(0.05, 0.05),  interpolation = T.InterpolationMode.BILINEAR),
-              T.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
-              T.RandomGrayscale(p=0.1),
-              T.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
-              T.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
-          ])
-        elif args.animation_mode == 'Video Input':
-          self.augs = T.Compose([
-              T.RandomHorizontalFlip(p=0.5),
-              T.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
-              T.RandomAffine(degrees=15, translate=(0.1, 0.1)),
-              T.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
-              T.RandomPerspective(distortion_scale=0.4, p=0.7),
-              T.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
-              T.RandomGrayscale(p=0.15),
-              T.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
-              # T.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
-          ])
-        elif  args.animation_mode == '2D' or args.animation_mode == '3D':
-          self.augs = T.Compose([
-              T.RandomHorizontalFlip(p=0.4),
-              T.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
-              T.RandomAffine(degrees=10, translate=(0.05, 0.05),  interpolation = T.InterpolationMode.BILINEAR),
-              T.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
-              T.RandomGrayscale(p=0.1),
-              T.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
-              T.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.3),
-          ])
+      super().__init__()
+      self.cut_size = cut_size
+      self.Overview = Overview
+      self.InnerCrop = InnerCrop
+      self.IC_Size_Pow = IC_Size_Pow
+      self.IC_Grey_P = IC_Grey_P
+      if args.animation_mode == 'None':
+        self.augs = T.Compose([
+            T.RandomHorizontalFlip(p=0.5),
+            T.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
+            T.RandomAffine(degrees=10, translate=(0.05, 0.05),  interpolation = T.InterpolationMode.BILINEAR),
+            T.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
+            T.RandomGrayscale(p=0.1),
+            T.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
+            T.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
+        ])
+      elif args.animation_mode == 'Video Input':
+        self.augs = T.Compose([
+            T.RandomHorizontalFlip(p=0.5),
+            T.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
+            T.RandomAffine(degrees=15, translate=(0.1, 0.1)),
+            T.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
+            T.RandomPerspective(distortion_scale=0.4, p=0.7),
+            T.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
+            T.RandomGrayscale(p=0.15),
+            T.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
+            # T.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
+        ])
+      elif args.animation_mode in ['2D', '3D']:
+        self.augs = T.Compose([
+            T.RandomHorizontalFlip(p=0.4),
+            T.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
+            T.RandomAffine(degrees=10, translate=(0.05, 0.05),  interpolation = T.InterpolationMode.BILINEAR),
+            T.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
+            T.RandomGrayscale(p=0.1),
+            T.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
+            T.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.3),
+        ])
           
 
     def forward(self, input):
-        cutouts = []
-        gray = T.Grayscale(3)
-        sideY, sideX = input.shape[2:4]
-        max_size = min(sideX, sideY)
-        min_size = min(sideX, sideY, self.cut_size)
-        l_size = max(sideX, sideY)
-        output_shape = [1,3,self.cut_size,self.cut_size] 
-        output_shape_2 = [1,3,self.cut_size+2,self.cut_size+2]
-        pad_input = F.pad(input,((sideY-max_size)//2,(sideY-max_size)//2,(sideX-max_size)//2,(sideX-max_size)//2), **padargs)
-        cutout = resize(pad_input, out_shape=output_shape)
+      cutouts = []
+      gray = T.Grayscale(3)
+      sideY, sideX = input.shape[2:4]
+      max_size = min(sideX, sideY)
+      min_size = min(sideX, sideY, self.cut_size)
+      l_size = max(sideX, sideY)
+      output_shape = [1,3,self.cut_size,self.cut_size]
+      output_shape_2 = [1,3,self.cut_size+2,self.cut_size+2]
+      pad_input = F.pad(input,((sideY-max_size)//2,(sideY-max_size)//2,(sideX-max_size)//2,(sideX-max_size)//2), **padargs)
+      cutout = resize(pad_input, out_shape=output_shape)
 
-        if self.Overview>0:
-            if self.Overview<=4:
-                if self.Overview>=1:
-                    cutouts.append(cutout)
-                if self.Overview>=2:
-                    cutouts.append(gray(cutout))
-                if self.Overview>=3:
-                    cutouts.append(TF.hflip(cutout))
-                if self.Overview==4:
-                    cutouts.append(gray(TF.hflip(cutout)))
-            else:
-                cutout = resize(pad_input, out_shape=output_shape)
-                for _ in range(self.Overview):
-                    cutouts.append(cutout)
+      if self.Overview>0:
+        if self.Overview<=4:
+          if self.Overview>=1:
+              cutouts.append(cutout)
+          if self.Overview>=2:
+              cutouts.append(gray(cutout))
+          if self.Overview>=3:
+              cutouts.append(TF.hflip(cutout))
+          if self.Overview==4:
+              cutouts.append(gray(TF.hflip(cutout)))
+        else:
+          cutout = resize(pad_input, out_shape=output_shape)
+          cutouts.extend(cutout for _ in range(self.Overview))
+        if cutout_debug:
+          if is_colab:
+            TF.to_pil_image(cutouts[0].clamp(0, 1).squeeze(0)).save("/content/cutout_overview0.jpg",quality=99)
+          else:
+            TF.to_pil_image(cutouts[0].clamp(0, 1).squeeze(0)).save("cutout_overview0.jpg",quality=99)
 
-            if cutout_debug:
-                if is_colab:
-                    TF.to_pil_image(cutouts[0].clamp(0, 1).squeeze(0)).save("/content/cutout_overview0.jpg",quality=99)
-                else:
-                    TF.to_pil_image(cutouts[0].clamp(0, 1).squeeze(0)).save("cutout_overview0.jpg",quality=99)
 
-                              
-        if self.InnerCrop >0:
-            for i in range(self.InnerCrop):
-                size = int(torch.rand([])**self.IC_Size_Pow * (max_size - min_size) + min_size)
-                offsetx = torch.randint(0, sideX - size + 1, ())
-                offsety = torch.randint(0, sideY - size + 1, ())
-                cutout = input[:, :, offsety:offsety + size, offsetx:offsetx + size]
-                if i <= int(self.IC_Grey_P * self.InnerCrop):
-                    cutout = gray(cutout)
-                cutout = resize(cutout, out_shape=output_shape)
-                cutouts.append(cutout)
-            if cutout_debug:
-                if is_colab:
-                    TF.to_pil_image(cutouts[-1].clamp(0, 1).squeeze(0)).save("/content/cutout_InnerCrop.jpg",quality=99)
-                else:
-                    TF.to_pil_image(cutouts[-1].clamp(0, 1).squeeze(0)).save("cutout_InnerCrop.jpg",quality=99)
-        cutouts = torch.cat(cutouts)
-        if skip_augs is not True: cutouts=self.augs(cutouts)
-        return cutouts
+      if self.InnerCrop >0:
+          for i in range(self.InnerCrop):
+              size = int(torch.rand([])**self.IC_Size_Pow * (max_size - min_size) + min_size)
+              offsetx = torch.randint(0, sideX - size + 1, ())
+              offsety = torch.randint(0, sideY - size + 1, ())
+              cutout = input[:, :, offsety:offsety + size, offsetx:offsetx + size]
+              if i <= int(self.IC_Grey_P * self.InnerCrop):
+                  cutout = gray(cutout)
+              cutout = resize(cutout, out_shape=output_shape)
+              cutouts.append(cutout)
+          if cutout_debug:
+              if is_colab:
+                  TF.to_pil_image(cutouts[-1].clamp(0, 1).squeeze(0)).save("/content/cutout_InnerCrop.jpg",quality=99)
+              else:
+                  TF.to_pil_image(cutouts[-1].clamp(0, 1).squeeze(0)).save("cutout_InnerCrop.jpg",quality=99)
+      cutouts = torch.cat(cutouts)
+      if skip_augs is not True: cutouts=self.augs(cutouts)
+      return cutouts
 
 def spherical_dist_loss(x, y):
     x = F.normalize(x, dim=-1)
@@ -1099,12 +1095,21 @@ def do_3d_step(img_filepath, frame_num, midas_model, midas_transform):
   print('rotation:',rotate_xyz_degrees)
   rotate_xyz = [math.radians(rotate_xyz_degrees[0]), math.radians(rotate_xyz_degrees[1]), math.radians(rotate_xyz_degrees[2])]
   rot_mat = p3dT.euler_angles_to_matrix(torch.tensor(rotate_xyz, device=device), "XYZ").unsqueeze(0)
-  print("rot_mat: " + str(rot_mat))
-  next_step_pil = dxf.transform_image_3d(img_filepath, midas_model, midas_transform, DEVICE,
-                                          rot_mat, translate_xyz, args.near_plane, args.far_plane,
-                                          args.fov, padding_mode=args.padding_mode,
-                                          sampling_mode=args.sampling_mode, midas_weight=args.midas_weight)
-  return next_step_pil
+  print(f"rot_mat: {str(rot_mat)}")
+  return dxf.transform_image_3d(
+      img_filepath,
+      midas_model,
+      midas_transform,
+      DEVICE,
+      rot_mat,
+      translate_xyz,
+      args.near_plane,
+      args.far_plane,
+      args.fov,
+      padding_mode=args.padding_mode,
+      sampling_mode=args.sampling_mode,
+      midas_weight=args.midas_weight,
+  )
 
 def symmetry_transformation_fn(x):
     if args.use_horizontal_symmetry:
